@@ -13,11 +13,7 @@ import { getPath } from "@/utils/getPath";
 import { slugifyStr } from "@/utils/slugify";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
-import {
-  getRelativeLocalePath,
-  getSlugWithoutLocale,
-  translateFor,
-} from "@/i18n/utils";
+import { getRelativeLocalePath, translateFor } from "@/i18n/utils";
 import { SITE } from "@/config";
 
 export interface Props {
@@ -79,12 +75,13 @@ const layoutProps = {
 
 /* ========== Prev/Next Posts ========== */
 
-const allPosts = posts.map(({ data: { title }, id }) => ({
-  slug: id,
+const allPosts = posts.map(({ data: { title }, id, filePath }) => ({
+  id,
   title,
+  filePath,
 }));
 
-const currentPostIndex = allPosts.findIndex(a => a.slug === post.id);
+const currentPostIndex = allPosts.findIndex(a => a.id === post.id);
 
 const prevPost = currentPostIndex !== 0 ? allPosts[currentPostIndex - 1] : null;
 const nextPost =
@@ -139,7 +136,7 @@ const nextPost =
           <a
             href={getRelativeLocalePath(
               Astro.currentLocale,
-              `/posts/${getSlugWithoutLocale(prevPost.slug)}`
+              getPath(prevPost.id, prevPost.filePath)
             )}
             class="flex w-full gap-1 hover:opacity-75"
           >
@@ -156,7 +153,7 @@ const nextPost =
           <a
             href={getRelativeLocalePath(
               Astro.currentLocale,
-              `/posts/${getSlugWithoutLocale(nextPost.slug)}`
+              getPath(nextPost.id, nextPost.filePath)
             )}
             class="flex w-full justify-end gap-1 text-right hover:opacity-75 sm:col-start-2"
           >
