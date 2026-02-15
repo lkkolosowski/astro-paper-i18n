@@ -1,0 +1,52 @@
+---
+import Card from "@/components/Card.astro";
+import Footer from "@/components/Footer.astro";
+import Header from "@/components/Header.astro";
+import Pagination from "@/components/Pagination.astro";
+import { SITE } from "@/config";
+import { translateFor } from "@/i18n/utils";
+import Layout from "@/layouts/Layout.astro";
+import Main from "@/layouts/Main.astro";
+import getPostsByTag from "@/utils/getPostsByTag";
+import getUniqueTags from "@/utils/getUniqueTags";
+import { getPostsByLocale } from "@/utils/posts";
+import type { GetStaticPathsOptions } from "astro";
+
+export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
+  const posts = await getPostsByLocale("pl");
+  const tags = getUniqueTags(posts);
+
+  return tags.flatMap(({ tag, tagName }) => {
+    const tagPosts = getPostsByTag(posts, tag);
+
+    return paginate(tagPosts, {
+      params: { tag },
+      props: { tagName },
+      pageSize: SITE.postPerPage,
+    });
+  });
+}
+
+const { tag } = Astro.params;
+const { page, tagName } = Astro.props;
+
+const t = translateFor(Astro.currentLocale);
+---
+
+<Layout title={`${t("tag")}: ${tagName} | ${t("site.title")}`}>
+  <Header />
+  <Main
+    pageTitle={[`${t("tag")}:`, `${tagName}`]}
+    titleTransition={tag}
+    pageDesc={t("tag.desc", { name: tagName })}
+  >
+    <h1 slot="title" transition:name={tag}>{`${t("tag")}:${tag}`}</h1>
+    <ul>
+      {page.data.map(data => <Card {...data} />)}
+    </ul>
+  </Main>
+
+  <Pagination {page} />
+
+  <Footer noMarginTop={page.lastPage > 1} />
+</Layout>
