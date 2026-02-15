@@ -1,0 +1,24 @@
+---
+import Footer from "@/components/Footer.astro";
+import Header from "@/components/Header.astro";
+import Tag from "@/components/Tag.astro";
+import { translateFor } from "@/i18n/utils";
+import Layout from "@/layouts/Layout.astro";
+import Main from "@/layouts/Main.astro";
+import getUniqueTags from "@/utils/getUniqueTags";
+import { getPostsByLocale } from "@/utils/posts";
+
+const posts = await getPostsByLocale("pl");
+const t = translateFor(Astro.currentLocale);
+const tags = getUniqueTags(posts);
+---
+
+<Layout title={`${t("tags")} | ${t("site.title")}`}>
+  <Header />
+  <Main pageTitle={t("tags")} pageDesc={t("tags.desc")}>
+    <ul>
+      {tags.map(({ tag, tagName }) => <Tag {tag} {tagName} size="lg" />)}
+    </ul>
+  </Main>
+  <Footer />
+</Layout>

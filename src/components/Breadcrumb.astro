@@ -1,10 +1,11 @@
 ---
 import type { I18nStrings } from "@/i18n/types";
 import {
+  getCanonicalRouteSegment,
   getLocaleInfo,
   getRelativeLocalePath,
-  translateFor,
   isLocaleKey,
+  translateFor,
 } from "@/i18n/utils";
 
 const t = translateFor(Astro.currentLocale);
@@ -31,6 +32,13 @@ if (isLocaleKey(breadcrumbList[0])) {
 // the urls aren't localized yet
 // so we need to keep a separate array of urls in english
 const breadcrumbListUrls = [...breadcrumbList];
+
+if (isLocaleKey(Astro.currentLocale) && breadcrumbList[0]) {
+  breadcrumbList[0] = getCanonicalRouteSegment(
+    Astro.currentLocale,
+    breadcrumbList[0]
+  );
+}
 
 if (breadcrumbList[0] !== "posts")
   breadcrumbList[0] = t(breadcrumbList[0] as keyof I18nStrings);

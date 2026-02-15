@@ -9,6 +9,12 @@ import {
 } from "@/i18n/config";
 import type { I18nKeys, I18nStrings } from "@/i18n/types";
 
+const routeSegmentMap: Record<string, Partial<Record<LocaleKey, string>>> = {
+  about: { pl: "o-nas" },
+  posts: { pl: "posty" },
+  tags: { pl: "tagi" },
+};
+
 export function translateFor(
   locale: string | undefined,
   _isLocaleKey: (
@@ -67,13 +73,63 @@ export function getRelativeLocalePath(
 ): string {
   if (!_isLocaleKey(locale)) throw new UnsupportedLocale(locale);
 
-  const localizedPath = getRelativeLocaleUrl(locale, path, options);
+  const localizedRoutePath = localizeRoutePath(locale, path, _isLocaleKey);
 
-  const hasTrailingSlash = path.endsWith("/") || localizedPath === "/";
+  const localizedPath = getRelativeLocaleUrl(
+    locale,
+    localizedRoutePath,
+    options
+  );
+
+  const hasTrailingSlash =
+    localizedRoutePath.endsWith("/") || localizedPath === "/";
 
   if (hasTrailingSlash) return localizedPath;
 
   return localizedPath.replace(/\/+$/, "");
+}
+
+export function getLocalizedRouteSegment(
+  locale: LocaleKey,
+  segment: string
+): string {
+  const localizedSegment =
+    routeSegmentMap[segment as keyof typeof routeSegmentMap]?.[locale];
+
+  return localizedSegment ?? segment;
+}
+
+export function getCanonicalRouteSegment(
+  locale: LocaleKey,
+  segment: string
+): string {
+  for (const [canonicalSegment, localizedByLocale] of Object.entries(
+    routeSegmentMap
+  )) {
+    if (localizedByLocale[locale] === segment) {
+      return canonicalSegment;
+    }
+  }
+
+  return segment;
+}
+
+export function localizeRoutePath(
+  locale: string | undefined,
+  path: string = "/",
+  _isLocaleKey: (locale?: string) => locale is LocaleKey = isLocaleKey
+): string {
+  if (!_isLocaleKey(locale)) throw new UnsupportedLocale(locale);
+
+  const normalizedPath = path || "/";
+  const url = new URL(normalizedPath, "http://foo.com");
+  const pathSegments = url.pathname.split("/");
+
+  if (pathSegments[1]) {
+    pathSegments[1] = getLocalizedRouteSegment(locale, pathSegments[1]);
+  }
+
+  return `${pathSegments.join("/")}${url.search}${url.hash}`;
 }
 
 export function stripBaseAndLocale(
@@ -85,8 +141,15 @@ export function stripBaseAndLocale(
   if (!_isLocaleKey(locale)) throw new UnsupportedLocale(locale);
 
   const prefix = _buildPrefix(locale);
+  const strippedPath = new URL(path.slice(prefix.length), "http://foo.com")
+    .pathname;
+  const pathSegments = strippedPath.split("/");
 
-  return new URL(path.slice(prefix.length), "http://foo.com").pathname;
+  if (pathSegments[1]) {
+    pathSegments[1] = getCanonicalRouteSegment(locale, pathSegments[1]);
+  }
+
+  return pathSegments.join("/");
 }
 
 export function buildPrefix(
